@@ -1,0 +1,132 @@
+Feature,Importance
+days_for_shipment_scheduled,0.7887348614732738
+shipping_mode_Same Day,0.038549179066846316
+customer_city,0.02522763597770693
+latitude,0.02459137943451102
+longitude,0.021885924782965336
+order_item_product_price,0.002675219104051828
+order_hour_20,0.0023694019827415077
+order_hour_16,0.0023494591691887766
+order_hour_18,0.002336377203962285
+order_day_of_week_3,0.0023345999353354633
+order_hour_15,0.002259969053188188
+order_hour_14,0.0021558583412557906
+order_day_of_week_6,0.002128538847960593
+order_hour_23,0.0021284873912970764
+order_day_of_week_5,0.0020906576729545876
+order_day_of_week_4,0.0020551239341861714
+order_hour_13,0.00199623378720643
+order_day_of_week_1,0.0019763500227918695
+order_day_of_week_2,0.0019665167496555275
+order_hour_21,0.0018634885555362712
+order_hour_17,0.001811726057943091
+order_hour_19,0.0017590288235613835
+order_hour_22,0.0016909083704214841
+order_hour_12,0.0016765487946122151
+order_month_8,0.0016763995191443023
+order_region_Central America,0.0016456299777342699
+order_month_2,0.0015897313898099795
+order_region_South America,0.0015841844532231066
+order_month_4,0.0015348546735250755
+order_month_3,0.0015041543416997312
+order_item_quantity,0.0014913956700615492
+order_month_7,0.0014827926631265362
+order_month_6,0.0014325540185545702
+order_month_9,0.0014197843620836492
+order_hour_5,0.0014184079714331293
+order_month_10,0.0014115350575644623
+order_region_Western Europe,0.0014079067673282747
+order_month_5,0.0013929360819495437
+order_region_Oceania,0.001384981414281934
+order_month_12,0.0013819019041105638
+order_hour_7,0.0013301513475941706
+order_region_Northern Europe,0.0012929641315120358
+order_hour_1,0.0012703969401757565
+order_hour_8,0.0012446570948703593
+order_hour_11,0.0012414660799712467
+order_hour_4,0.0012378236273103821
+order_hour_10,0.0012288373999707553
+order_region_Southern Europe,0.0011704378890831997
+order_region_Caribbean,0.00114732286943887
+order_hour_2,0.001123534268794112
+order_region_East of USA,0.0011145836643957684
+order_hour_9,0.0011106451046915687
+order_region_Southeast Asia,0.0011074447462013392
+order_hour_6,0.0010802709382290296
+order_month_11,0.0010743734863142389
+shipping_mode_Standard Class,0.001061472023091671
+order_hour_3,0.0010459345790017512
+order_region_West of USA ,0.001041800885727551
+order_region_Eastern Asia,0.001024986497432435
+shipping_mode_Second Class,0.0010141931287841765
+order_region_South of  USA ,0.000997839357752275
+order_region_West Asia,0.0009919207724171345
+order_region_US Center ,0.0009525746631139548
+order_region_South Asia,0.0009503105241596133
+order_region_Eastern Europe,0.0008359114632623815
+order_region_West Africa,0.0008333485168752136
+order_region_North Africa,0.000755939664332672
+order_region_Central Africa,0.0005493391423761774
+order_region_East Africa,0.0005241539111670649
+department_name_Fan Shop,0.00038319011776101475
+order_region_Southern Africa,0.0003813097088985603
+category_name_Men's Footwear,0.00034656820465496605
+customer_country_Puerto Rico,0.00033271574621764483
+category_name_Fishing,0.0003270097921104449
+category_name_Shop By Sport,0.00031742738250303533
+department_name_Golf,0.00031225711022574967
+category_name_Water Sports,0.0003091041597171666
+category_name_Indoor/Outdoor Games,0.0003062815713720712
+category_name_Cleats,0.00030153002533505084
+category_name_Camping & Hiking,0.0002804284084386954
+department_name_Outdoors,0.0002589515428639903
+department_name_Discs Shop,0.00023034573275089774
+department_name_Footwear,0.0002087987503776156
+category_name_Women's Apparel,0.0001957294863298816
+department_name_Technology,0.0001721560929133562
+department_name_Fitness,0.00014732399454720518
+category_name_Cardio Equipment,0.0001450262600844106
+order_region_Central Asia,0.00014196995705883673
+category_name_Electronics,0.00014147441859358034
+category_name_Women's Clothing,0.00012422646620839474
+category_name_Children's Clothing,9.509131218068407e-05
+category_name_Toys,9.221075688590627e-05
+category_name_Golf Balls,8.830111854093727e-05
+category_name_Girls' Apparel,8.760354595609123e-05
+category_name_Video Games,8.029273404110849e-05
+category_name_Cameras ,7.66657898725946e-05
+category_name_Crafts,7.507383274493886e-05
+category_name_Golf Gloves,7.255105184256672e-05
+category_name_Garden,6.926186586805824e-05
+category_name_DVDs,6.923122813831345e-05
+category_name_Computers,6.307259139495998e-05
+category_name_Trade-In,6.234704789931625e-05
+category_name_Music,5.728141059187605e-05
+category_name_Consumer Electronics,5.393863850598467e-05
+category_name_Baseball & Softball,5.3154931609394886e-05
+category_name_CDs ,4.923502231586159e-05
+category_name_Golf Shoes,4.748438775351635e-05
+category_name_Men's Clothing,4.618667202100556e-05
+category_name_Sporting Goods,4.512302118088575e-05
+category_name_Health and Beauty,4.436522863195485e-05
+department_name_Health and Beauty ,4.347433844655936e-05
+department_name_Book Shop,4.346723033510957e-05
+category_name_Hockey,4.1910388604446856e-05
+category_name_Books ,3.885292719746472e-05
+category_name_Pet Supplies,3.809965997962103e-05
+department_name_Pet Shop,3.555498317790382e-05
+category_name_Golf Apparel,3.304678120363881e-05
+category_name_Fitness Accessories,3.2710848676898455e-05
+category_name_Tennis & Racquet,3.2409568785340815e-05
+category_name_Kids' Golf Clubs,3.1000163079982835e-05
+category_name_Soccer,2.6470264451058056e-05
+category_name_Lacrosse,2.6131244748223557e-05
+category_name_Women's Golf Clubs,2.5712884353993306e-05
+category_name_Hunting & Shooting,2.5504525900591292e-05
+category_name_Baby ,2.5251678082666056e-05
+category_name_Boxing & MMA,2.4071233428764728e-05
+category_name_Men's Golf Clubs,2.064018457495888e-05
+category_name_Basketball,9.891525832311943e-06
+category_name_As Seen on  TV!,9.274034318859291e-06
+category_name_Golf Bags & Carts,8.704449049509718e-06
+category_name_Strength Training,8.264452002066947e-06
