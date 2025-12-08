@@ -170,7 +170,7 @@ with tab2:
     # ============================================================
     # 3️⃣ VISUALISASI REGION BERISIKO (BERDASARKAN MODEL)
     # ============================================================
-    st.subheader("🌍 Visualisasi Region Paling Berisiko (Menggunakan Model)")
+    st.subheader("🌍 Visualisasi Region Paling Berisiko")
 
     try:
         # 1. Ambil fitur dari model
@@ -398,7 +398,7 @@ with tab3:
         
     
     # ============================================================
-    #  ACTUAL VS PREDICTED — FIX DIMENSI 1D + FULL USER-FRIENDLY EVALUATION
+    #  ACTUAL VS PREDICTED — HANYA VISUALISASI UTAMA
     # ============================================================
 
     st.subheader("📈 Realita vs Prediksi Waktu Pengiriman")
@@ -437,106 +437,6 @@ with tab3:
                 "Actual": y_test.values[:n].reshape(-1),
                 "Predicted": pred[:n]
             })
-
-            # ============================================================
-            # 5. EVALUASI MODEL
-            # ============================================================
-
-            from sklearn.metrics import (
-                mean_absolute_error,
-                mean_squared_error,
-                r2_score
-            )
-
-            mae = mean_absolute_error(y_test[:n], pred[:n])
-            mse = mean_squared_error(y_test[:n], pred[:n])
-            rmse = np.sqrt(mse)
-            r2 = r2_score(y_test[:n], pred[:n])
-
-            mape = np.mean(
-                np.abs((y_test[:n] - pred[:n]) / (y_test[:n] + 1e-9))
-            ) * 100
-
-            N = len(y_test[:n])
-            K = X_test.shape[1]
-            adj_r2 = 1 - (1 - r2) * (N - 1) / (N - K - 1)
-
-            # ============================================================
-            # 6. EVALUASI UNTUK ORANG AWAM (INSIGHT)
-            # ============================================================
-
-            st.subheader("🧠 Ringkasan Evaluasi ")
-
-            avg_error = mae
-            far_error_limit = 2 * rmse
-
-            residual = y_test[:n] - pred[:n]
-            outliers = df_plot[np.abs(residual) > far_error_limit]
-            percent_outliers = (len(outliers) / len(df_plot)) * 100
-
-            st.markdown(f"""
-    ### 🎯 Ketepatan Prediksi
-    Rata-rata model salah menebak sekitar **{avg_error:.2f} hari**.  
-    Artinya, jika waktu asli 5 hari, model biasanya menebak antara **{5-avg_error:.1f} sampai {5+avg_error:.1f} hari**.
-
-    ### 📦 Tingkat Kesalahan Besar
-    Hanya sekitar **{percent_outliers:.1f}%** prediksi yang meleset jauh dari nilai asli.  
-    Sebagian besar prediksi **cukup dekat dengan kenyataan**.
-
-    ### 🔍 Kebiasaan Model
-    - Jika banyak titik berada **di bawah garis merah**, model sering **terlalu optimis** (menebak lebih cepat).
-    - Jika banyak titik berada **di atas garis merah**, model cenderung **menebak lebih lama** dari kenyataan.
-
-    ### 🚨 Prediksi Ekstrem
-    Ada **{len(outliers)} data** yang prediksinya jauh meleset.  
-    Ini biasanya terjadi pada data dengan kondisi **tidak umum**, seperti rare city, extreme price, dsb.
-
-    ### 🧠 Kesimpulan Utama  
-    Model ini **cukup bagus** untuk memprediksi lama pengiriman barang. Mayoritas hasilnya dekat dengan nilai asli, dan hanya sedikit kesalahan besar.
-    """)
-
-            # ============================================================
-            # 7. METRIK TEKNIS (KALAU USER MAU DETAIL)
-            # ============================================================
-
-            with st.expander("📘 Lihat Evaluasi Teknis (Untuk Pengguna Advanced)"):
-                st.write(f"**MAE:** {mae:.4f}")
-                st.write(f"**MSE:** {mse:.4f}")
-                st.write(f"**RMSE:** {rmse:.4f}")
-                st.write(f"**MAPE:** {mape:.2f}%")
-                st.write(f"**R² Score:** {r2:.4f}")
-                st.write(f"**Adjusted R²:** {adj_r2:.4f}")
-
-            # ============================================================
-            # 8. GRAFIK 1 — HISTOGRAM ERROR (Mudah Dipahami)
-            # ============================================================
-
-            st.subheader("📊 Bagaimana Pola Kesalahan Model?")
-
-            fig_res = px.histogram(
-                residual,
-                nbins=50,
-                title="Distribusi Kesalahan Model (Semakin Tengah Semakin Baik)",
-                opacity=0.75
-            )
-            st.plotly_chart(fig_res, use_container_width=True)
-
-            st.caption("Jika grafik berbentuk lonceng di tengah, model bekerja dengan baik.")
-
-            # ============================================================
-            # 9. GRAFIK 2 — ERROR VS ACTUAL
-            # ============================================================
-
-            fig_err = px.scatter(
-                x=y_test[:n],
-                y=residual,
-                title="Error vs Actual — Apakah Ada Pola Tidak Normal?",
-                labels={"x": "Nilai Asli", "y": "Error"},
-                opacity=0.6
-            )
-            st.plotly_chart(fig_err, use_container_width=True)
-
-            st.caption("Jika titik menyebar acak tanpa pola, berarti model stabil.")
 
             # ============================================================
             # 10. GRAFIK UTAMA — ACTUAL VS PREDICTED
