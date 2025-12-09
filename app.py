@@ -260,21 +260,26 @@ with tab2:
     st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        if "product_name" not in DF_KLASIFIKASI.columns:
-            st.warning("❌ Kolom 'product_name' tidak ditemukan di dataset.")
+        # Ganti dengan kolom baru (Category_Name_Original)
+        col_produk = "Category_Name_Original"
+
+        if col_produk not in DF_KLASIFIKASI.columns:
+            st.warning(f"❌ Kolom '{col_produk}' tidak ditemukan di dataset.")
         else:
             st.info("🔍 Menghitung ulang risiko tiap produk berdasarkan MODEL KLASIFIKASI.")
 
             hasil_produk = []
-            unique_products = DF_KLASIFIKASI["product_name"].unique()
+            unique_products = DF_KLASIFIKASI[col_produk].unique()
 
             for produk in unique_products:
-                subset = DF_KLASIFIKASI[DF_KLASIFIKASI["product_name"] == produk]
+                subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col_produk] == produk]
                 if len(subset) == 0:
                     continue
 
+                # Gunakan fitur tepat seperti pada model
                 X = subset[MODEL_KLASIFIKASI.feature_names_in_]
 
+                # Scaling numerik
                 num_cols = [
                     "days_for_shipment_scheduled",
                     "days_for_shipping_real",
@@ -284,19 +289,24 @@ with tab2:
 
                 if len(num_cols) > 0:
                     try:
-                        X[num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
+                        X.loc[:, num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
                     except:
                         pass
 
+                # Prediksi probabilitas
                 prob = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
+
                 hasil_produk.append([produk, prob.mean()])
 
+            # Buat dataframe hasil
             produk_risk = pd.DataFrame(hasil_produk, columns=["Produk", "Risk_Ratio"])
             produk_risk["Risk_Percent"] = (produk_risk["Risk_Ratio"] * 100).round(2)
             produk_risk = produk_risk.sort_values("Risk_Ratio", ascending=False)
 
+            # Ambil top 10
             top10 = produk_risk.head(10).reset_index(drop=True)
 
+            # Tambah warna risiko
             warna = []
             total = len(top10)
             for i in range(total):
@@ -309,6 +319,7 @@ with tab2:
 
             top10["Warna"] = warna
 
+            # Plot
             fig_top = px.bar(
                 top10,
                 x="Produk",
@@ -327,8 +338,6 @@ with tab2:
 
     except Exception as e:
         st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
-
-
     # ============================================================
     # 4️⃣ SIMULASI PESANAN BARU
     # ============================================================
