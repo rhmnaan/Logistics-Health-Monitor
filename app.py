@@ -254,90 +254,8 @@ with tab2:
         st.warning(f"Gagal menampilkan visualisasi region: {e}")
 
 
-    # ============================================================
-    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
-    # ============================================================
-    st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
-
-    try:
-        # Ganti dengan kolom baru (Category_Name_Original)
-        col_produk = "Category_Name_Original"
-
-        if col_produk not in DF_KLASIFIKASI.columns:
-            st.warning(f"❌ Kolom '{col_produk}' tidak ditemukan di dataset.")
-        else:
-            st.info("🔍 Menghitung ulang risiko tiap produk berdasarkan MODEL KLASIFIKASI.")
-
-            hasil_produk = []
-            unique_products = DF_KLASIFIKASI[col_produk].unique()
-
-            for produk in unique_products:
-                subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col_produk] == produk]
-                if len(subset) == 0:
-                    continue
-
-                # Gunakan fitur tepat seperti pada model
-                X = subset[MODEL_KLASIFIKASI.feature_names_in_]
-
-                # Scaling numerik
-                num_cols = [
-                    "days_for_shipment_scheduled",
-                    "days_for_shipping_real",
-                    "shipment_delay"
-                ]
-                num_cols = [c for c in num_cols if c in X.columns]
-
-                if len(num_cols) > 0:
-                    try:
-                        X.loc[:, num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
-                    except:
-                        pass
-
-                # Prediksi probabilitas
-                prob = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
-
-                hasil_produk.append([produk, prob.mean()])
-
-            # Buat dataframe hasil
-            produk_risk = pd.DataFrame(hasil_produk, columns=["Produk", "Risk_Ratio"])
-            produk_risk["Risk_Percent"] = (produk_risk["Risk_Ratio"] * 100).round(2)
-            produk_risk = produk_risk.sort_values("Risk_Ratio", ascending=False)
-
-            # Ambil top 10
-            top10 = produk_risk.head(10).reset_index(drop=True)
-
-            # Tambah warna risiko
-            warna = []
-            total = len(top10)
-            for i in range(total):
-                if i < total * 0.33:
-                    warna.append("red")
-                elif i < total * 0.66:
-                    warna.append("orange")
-                else:
-                    warna.append("green")
-
-            top10["Warna"] = warna
-
-            # Plot
-            fig_top = px.bar(
-                top10,
-                x="Produk",
-                y="Risk_Percent",
-                color="Warna",
-                text="Risk_Percent",
-                title="🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi"
-            )
-
-            fig_top.update_layout(xaxis_tickangle=-45, showlegend=False)
-            st.plotly_chart(fig_top, use_container_width=True)
-
-            st.success(
-                f"📦 Produk dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
-            )
-
-    except Exception as e:
-        st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
+    
+        
     # ============================================================
     # 4️⃣ SIMULASI PESANAN BARU
     # ============================================================
@@ -409,6 +327,90 @@ with tab2:
 
     else:
         st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
+        
+        
+    # ============================================================
+    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
+    # ============================================================
+    st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
+
+    try:
+        col_produk = "Category_Name_Original"
+
+        if col_produk not in DF_KLASIFIKASI.columns:
+            st.warning(f"❌ Kolom '{col_produk}' tidak ditemukan di dataset.")
+        else:
+            st.info("🔍 Menghitung ulang risiko tiap produk berdasarkan MODEL KLASIFIKASI.")
+
+            hasil_produk = []
+            unique_products = DF_KLASIFIKASI[col_produk].unique()
+
+            for produk in unique_products:
+                subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col_produk] == produk]
+                if len(subset) == 0:
+                    continue
+
+                # Gunakan fitur tepat seperti pada model
+                X = subset[MODEL_KLASIFIKASI.feature_names_in_]
+
+                # Scaling numerik
+                num_cols = [
+                    "days_for_shipment_scheduled",
+                    "days_for_shipping_real",
+                    "shipment_delay"
+                ]
+                num_cols = [c for c in num_cols if c in X.columns]
+
+                if len(num_cols) > 0:
+                    try:
+                        X.loc[:, num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
+                    except:
+                        pass
+
+                # Prediksi probabilitas
+                prob = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
+                hasil_produk.append([produk, prob.mean()])
+
+            # Buat dataframe hasil
+            produk_risk = pd.DataFrame(hasil_produk, columns=["Produk", "Risk_Ratio"])
+            produk_risk["Risk_Percent"] = (produk_risk["Risk_Ratio"] * 100).round(2)
+            produk_risk = produk_risk.sort_values("Risk_Ratio", ascending=False)
+
+            # Ambil top 10
+            top10 = produk_risk.head(10).reset_index(drop=True)
+
+            # Tambah warna risiko
+            warna = []
+            total = len(top10)
+            for i in range(total):
+                if i < total * 0.33:
+                    warna.append("red")
+                elif i < total * 0.66:
+                    warna.append("orange")
+                else:
+                    warna.append("green")
+
+            top10["Warna"] = warna
+
+            # Plot
+            fig_top = px.bar(
+                top10,
+                x="Produk",
+                y="Risk_Percent",
+                color="Warna",
+                text="Risk_Percent",
+                title="🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi"
+            )
+
+            fig_top.update_layout(xaxis_tickangle=-45, showlegend=False)
+            st.plotly_chart(fig_top, use_container_width=True)
+
+            st.success(
+                f"📦 Produk dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
+            )
+
+    except Exception as e:
+        st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
 
 
 # ---------------------------------------------------------
