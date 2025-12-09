@@ -335,60 +335,45 @@ with tab2:
     st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        # Pastikan kolom ada
         if "Top_Kategori" not in DF_KLASIFIKASI.columns:
             st.warning("❌ Kolom 'Top_Kategori' tidak ditemukan.")
         else:
-            st.info("📊 Menggunakan Risk_Count dari setiap kategori.")
-
-            # Extract kategori dan risk
+            # Extract kategori & risk dari dict jika ada
             DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI["Top_Kategori"].apply(
-                lambda x: x["Category"] if isinstance(x, dict) else None
+                lambda x: x.get("Category") if isinstance(x, dict) else None
             )
             DF_KLASIFIKASI["Risk"] = DF_KLASIFIKASI["Top_Kategori"].apply(
-                lambda x: x["Risk_Count"] if isinstance(x, dict) else None
+                lambda x: x.get("Risk_Count") if isinstance(x, dict) else None
             )
 
-            # Drop null
             data = DF_KLASIFIKASI.dropna(subset=["Kategori", "Risk"])
 
-            # Pilih top 10
-            top10 = data.sort_values("Risk", ascending=False).head(10)
+            # Jika kosong, tampilkan pesan
+            if data.empty:
+                st.warning("⚠ Data kategori masih kosong atau formatnya tidak sesuai.")
+            else:
+                # Ambil Top 10
+                top10 = data.sort_values("Risk", ascending=False).head(10)
 
-            # Warna berdasarkan ranking
-            warna = []
-            total = len(top10)
-            for i in range(total):
-                if i < total * 0.33:
-                    warna.append("red")
-                elif i < total * 0.66:
-                    warna.append("orange")
-                else:
-                    warna.append("green")
+                # Warna gradien sederhana
+                top10["Warna"] = ["red", "orange", "yellow", "green"] * 3
+                top10["Warna"] = top10["Warna"].head(len(top10))
 
-            top10["Warna"] = warna
+                fig_top = px.bar(
+                    top10,
+                    x="Kategori",
+                    y="Risk",
+                    color="Warna",
+                    text="Risk",
+                    title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
+                )
 
-            # Plot bar chart
-            fig_top = px.bar(
-                top10,
-                x="Kategori",
-                y="Risk",
-                color="Warna",
-                text="Risk",
-                title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
-            )
-
-            fig_top.update_layout(
-                xaxis_tickangle=-45,
-                showlegend=False,
-                height=500
-            )
-            st.plotly_chart(fig_top, use_container_width=True)
-
-            # Output kategori tertinggi
-            st.success(
-                f"🏆 Risiko tertinggi: **{top10.iloc[0]['Kategori']} ({top10.iloc[0]['Risk']})**"
-            )
+                fig_top.update_layout(
+                    xaxis_tickangle=-45,
+                    showlegend=False,
+                    height=500
+                )
+                st.plotly_chart(fig_top, use_container_width=True)
 
     except Exception as e:
         st.error(f"Gagal membuat visualisasi Top 10: {e}")
