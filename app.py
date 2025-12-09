@@ -167,9 +167,9 @@ with tab2:
         
     
     # ============================================================
-    # 2️⃣ TOP 10 KATEGORI PRODUK PALING BERISIKO + STATUS PREDIKSI
+    # 2️⃣ KATEGORI PRODUK PALING BERISIKO (TANPA STATUS PREDIKSI)
     # ============================================================
-    st.subheader("🏆 Top 10 Kategori Produk dengan Risiko Keterlambatan Tertinggi")
+    st.subheader("🏆 Kategori Produk dengan Risiko Keterlambatan Tertinggi")
 
     try:
         # Ambil fitur kategori dari model
@@ -180,89 +180,65 @@ with tab2:
             st.warning("❌ Tidak ada fitur kategori dalam model (category_name_*).")
 
         else:
-            st.info("🔄 Menghitung risiko & status prediksi tiap kategori berdasarkan model.")
+            st.info("🔄 Menghitung risiko kategori berdasarkan model...")
 
             hasil_kat = []
-            threshold = 0.5  # bisa diganti sesuai kebutuhan
-
-            dataset_cols = DF_KLASIFIKASI.columns.tolist()
-            dataset_has_category = any(col in dataset_cols for col in kategori_cols)
 
             for col in kategori_cols:
                 kategori_name = col.replace("category_name_", "")
 
-                # Jika dataset punya kategori asli
-                if dataset_has_category and col in DF_KLASIFIKASI.columns:
-                    subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col] == 1]
+                # --------- SIMULASI jika data asli tidak tersedia ---------
+                X_dummy = pd.DataFrame([{f: 0 for f in model_features}])
+                X_dummy[col] = 1  # aktifkan kategori yg dihitung
 
-                    if len(subset) > 0:
-                        X = subset[model_features]
-                        pred = MODEL_KLASIFIKASI.predict_proba(X)[:, 1].mean()
-                    else:
-                        pred = None
-                else:
-                    pred = None
+                # Scaling kolom numerik
+                num_cols = [
+                    c for c in [
+                        "days_for_shipment_scheduled",
+                        "days_for_shipping_real",
+                        "shipment_delay"
+                    ] if c in model_features
+                ]
 
-                # Jika dataset tidak punya data kategori → lakukan simulasi dummy
-                if pred is None:
-                    X_dummy = pd.DataFrame([{f: 0 for f in model_features}])
-                    X_dummy[col] = 1
+                if len(num_cols) > 0:
+                    try:
+                        X_dummy[num_cols] = SCALER_KLASIFIKASI.transform(X_dummy[num_cols])
+                    except:
+                        pass
 
-                    num_cols = [
-                        c for c in [
-                            "days_for_shipment_scheduled",
-                            "days_for_shipping_real",
-                            "shipment_delay"
-                        ] if c in model_features
-                    ]
+                pred = MODEL_KLASIFIKASI.predict_proba(X_dummy)[0][1]
 
-                    if len(num_cols) > 0:
-                        try:
-                            X_dummy[num_cols] = SCALER_KLASIFIKASI.transform(X_dummy[num_cols])
-                        except:
-                            pass
-
-                    pred = MODEL_KLASIFIKASI.predict_proba(X_dummy)[0][1]
-
-                # Tentukan status
-                status = "Terlambat" if pred >= threshold else "Tidak Terlambat"
-
-                hasil_kat.append([kategori_name, pred, status])
+                hasil_kat.append([kategori_name, pred])
 
             # Buat dataframe
-            df_kat = pd.DataFrame(hasil_kat, columns=["Kategori", "Risk_Ratio", "Status"])
+            df_kat = pd.DataFrame(hasil_kat, columns=["Kategori", "Risk_Ratio"])
             df_kat["Risk_Percent"] = (df_kat["Risk_Ratio"] * 100).round(2)
 
-            # Ambil TOP 10
-            df_top10 = df_kat.sort_values("Risk_Ratio", ascending=False).head(10)
+            # Urutkan risiko tertinggi
+            df_kat_sorted = df_kat.sort_values("Risk_Ratio", ascending=False).reset_index(drop=True)
 
-            # Warna
-            warna = ["red" if s == "Terlambat" else "green" for s in df_top10["Status"]]
-            df_top10["Warna"] = warna
+            # Ambil kategori paling berisiko
+            top_kat = df_kat_sorted.iloc[0]
 
-            # Plot
+            st.success(f"🔥 **Kategori dengan Risiko Tertinggi:** {top_kat['Kategori']} — {top_kat['Risk_Percent']}%")
+
+            # Tampilkan grafik Top 10
+            df_top10 = df_kat_sorted.head(10)
             fig_top10 = px.bar(
                 df_top10,
                 x="Kategori",
                 y="Risk_Percent",
-                color="Warna",
-                title="🔥 Top 10 Kategori Produk – Risiko & Status Prediksi",
-                text="Status",
+                title="🔥 Top 10 Kategori Produk dengan Risiko Keterlambatan Tertinggi",
+                text="Risk_Percent",
+                color="Risk_Percent",
+                color_continuous_scale="Reds"
             )
 
-            fig_top10.update_layout(xaxis_tickangle=-45, showlegend=False)
+            fig_top10.update_layout(xaxis_tickangle=-45)
             st.plotly_chart(fig_top10, use_container_width=True)
 
-            top_cat = df_top10.iloc[0]
-            st.success(
-                f"📌 Kategori paling berisiko: **{top_cat['Kategori']} — {top_cat['Status']} ({top_cat['Risk_Percent']}%)**"
-            )
-
-            # Tampilkan tabelnya jika mau
-            st.dataframe(df_top10[["Kategori", "Risk_Percent", "Status"]])
-
     except Exception as e:
-        st.warning(f"Gagal menghitung kategori. Error: {e}")
+        st.warning(f"Gagal menghitung kategori risiko. Error: {e}")
 
         
     # ============================================================
