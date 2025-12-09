@@ -330,26 +330,32 @@ with tab2:
         
     
     # ============================================================
-    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
+    # 3️⃣.b TOP 10 KATEGORI DENGAN RISIKO KETERLAMBATAN TERTINGGI
     # ============================================================
-    st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
+    st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        # Pastikan kolom yang diperlukan ada
-        if "Top_Kategori" not in DF_KLASIFIKASI.columns or "Proporsi" not in DF_KLASIFIKASI.columns:
-            st.warning("❌ Dataset agregasi tidak memiliki kolom 'Top_Kategori' atau 'Proporsi'.")
+        # Pastikan kolom ada
+        if "Top_Kategori" not in DF_KLASIFIKASI.columns:
+            st.warning("❌ Kolom 'Top_Kategori' tidak ditemukan.")
         else:
-            st.info("📊 Menggunakan data agregasi (Proporsi) untuk menentukan Top 10 kategori risiko tertinggi.")
+            st.info("📊 Menggunakan Risk_Count dari setiap kategori.")
 
-            # Extract nama kategori dari JSON
+            # Extract kategori dan risk
             DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI["Top_Kategori"].apply(
-                lambda x: x["Category"] if isinstance(x, dict) and "Category" in x else str(x)
+                lambda x: x["Category"] if isinstance(x, dict) else None
+            )
+            DF_KLASIFIKASI["Risk"] = DF_KLASIFIKASI["Top_Kategori"].apply(
+                lambda x: x["Risk_Count"] if isinstance(x, dict) else None
             )
 
-            # Sort berdasarkan Proporsi (risiko)
-            top10 = DF_KLASIFIKASI.sort_values("Proporsi", ascending=False).head(10)
+            # Drop null
+            data = DF_KLASIFIKASI.dropna(subset=["Kategori", "Risk"])
 
-            # Buat warna gradasi
+            # Pilih top 10
+            top10 = data.sort_values("Risk", ascending=False).head(10)
+
+            # Warna berdasarkan ranking
             warna = []
             total = len(top10)
             for i in range(total):
@@ -362,26 +368,30 @@ with tab2:
 
             top10["Warna"] = warna
 
-            # Visualisasi
+            # Plot bar chart
             fig_top = px.bar(
                 top10,
                 x="Kategori",
-                y="Proporsi",
+                y="Risk",
                 color="Warna",
-                text="Proporsi",
+                text="Risk",
                 title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
             )
 
-            fig_top.update_layout(xaxis_tickangle=-45, showlegend=False)
+            fig_top.update_layout(
+                xaxis_tickangle=-45,
+                showlegend=False,
+                height=500
+            )
             st.plotly_chart(fig_top, use_container_width=True)
 
             # Output kategori tertinggi
             st.success(
-                f"🏆 Risiko tertinggi: **{top10.iloc[0]['Kategori']} ({top10.iloc[0]['Proporsi']})**"
+                f"🏆 Risiko tertinggi: **{top10.iloc[0]['Kategori']} ({top10.iloc[0]['Risk']})**"
             )
 
     except Exception as e:
-        st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
+        st.error(f"Gagal membuat visualisasi Top 10: {e}")
     
     
 # ---------------------------------------------------------
