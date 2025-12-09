@@ -329,41 +329,33 @@ with tab2:
         st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
         
     # ============================================================
-    # CEK KOLOM DATASET
-    # ============================================================
-    st.subheader("📋 Daftar Kolom pada Dataset Klasifikasi")
-    st.write(DF_KLASIFIKASI.columns.tolist())
-
-    st.subheader("🔍 Preview 5 Baris Dataset")
-    st.dataframe(DF_KLASIFIKASI.head())
-
-        
-        
-    # ============================================================
-    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
+    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI — MENGGUNAKAN Top_Kategori
     # ============================================================
     st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        col_produk = "Category_Name_Original"
+        col_produk = "Top_Kategori"   # ← pakai kolom ini
 
         if col_produk not in DF_KLASIFIKASI.columns:
             st.warning(f"❌ Kolom '{col_produk}' tidak ditemukan di dataset.")
+            st.write("Kolom yang tersedia:", DF_KLASIFIKASI.columns.tolist())
+
         else:
-            st.info("🔍 Menghitung ulang risiko tiap produk berdasarkan MODEL KLASIFIKASI.")
+            st.info("🔍 Menghitung ulang risiko tiap kategori produk berdasarkan MODEL KLASIFIKASI...")
 
             hasil_produk = []
-            unique_products = DF_KLASIFIKASI[col_produk].unique()
+            unique_products = DF_KLASIFIKASI[col_produk].dropna().unique()
 
             for produk in unique_products:
                 subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col_produk] == produk]
-                if len(subset) == 0:
+
+                if subset.empty:
                     continue
 
-                # Gunakan fitur tepat seperti pada model
+                # Gunakan fitur sesuai model
                 X = subset[MODEL_KLASIFIKASI.feature_names_in_]
 
-                # Scaling numerik
+                # Kolom numerik untuk scaling
                 num_cols = [
                     "days_for_shipment_scheduled",
                     "days_for_shipping_real",
@@ -371,7 +363,7 @@ with tab2:
                 ]
                 num_cols = [c for c in num_cols if c in X.columns]
 
-                if len(num_cols) > 0:
+                if num_cols:
                     try:
                         X.loc[:, num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
                     except:
@@ -381,15 +373,15 @@ with tab2:
                 prob = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
                 hasil_produk.append([produk, prob.mean()])
 
-            # Buat dataframe hasil
+            # DataFrame hasil
             produk_risk = pd.DataFrame(hasil_produk, columns=["Produk", "Risk_Ratio"])
             produk_risk["Risk_Percent"] = (produk_risk["Risk_Ratio"] * 100).round(2)
             produk_risk = produk_risk.sort_values("Risk_Ratio", ascending=False)
 
-            # Ambil top 10
+            # Ambil Top 10
             top10 = produk_risk.head(10).reset_index(drop=True)
 
-            # Tambah warna risiko
+            # Warna risiko
             warna = []
             total = len(top10)
             for i in range(total):
@@ -412,17 +404,21 @@ with tab2:
                 title="🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi"
             )
 
-            fig_top.update_layout(xaxis_tickangle=-45, showlegend=False)
+            fig_top.update_layout(
+                xaxis_tickangle=-45,
+                showlegend=False,
+                yaxis_title="Risk (%)"
+            )
+
             st.plotly_chart(fig_top, use_container_width=True)
 
             st.success(
-                f"📦 Produk dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
+                f"📦 Kategori dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
             )
 
     except Exception as e:
-        st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
-
-
+        st.error(f"Gagal membuat visualisasi Top 10 Produk: {e}")
+    
 # ---------------------------------------------------------
 # TAB 3 – OPTIMIZATION & STRATEGY (VERSION FOR HUMAN-FRIENDLY UI)
 # ---------------------------------------------------------
