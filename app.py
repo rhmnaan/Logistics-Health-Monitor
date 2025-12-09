@@ -377,6 +377,8 @@ with tab2:
 
     except Exception as e:
         st.error(f"Gagal membuat visualisasi Top 10: {e}")
+        
+    st.write(DF_KLASIFIKASI["Top_Kategori"].head())
     
     
 # ---------------------------------------------------------
