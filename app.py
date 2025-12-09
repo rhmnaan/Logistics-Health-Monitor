@@ -19,6 +19,7 @@ def load_all_resources():
     scaler_klasifikasi = None
     model_prediksi_waktu = None
 
+    # Dummy data for fallback
     df_anomali = pd.DataFrame({'Is_Anomaly': ['No', 'Yes', 'No'],
                                'Anomaly_Score': [0.1, -0.5, 0.2],
                                'Sales': [100, 20, 80],
@@ -27,7 +28,8 @@ def load_all_resources():
     df_klasifikasi = pd.DataFrame({'Proporsi': ['{"Risk_Level": ["Low","High"], "Count": [80,20]}'],
                                    'Top_Kategori': ['{"Category":["Furniture","Tech"],"Risk_Count":[12,7]}']})
 
-    df_importance = pd.DataFrame({'Fitur': ['Mode Pengiriman', 'Jarak', 'Tipe Barang'],
+    # Translated dummy feature importance
+    df_importance = pd.DataFrame({'Fitur': ['Shipping Mode', 'Distance', 'Item Type'],
                                   'Importance': [0.6, 0.4, 0.2]})
 
     kolom_klasifikasi = {}
@@ -35,45 +37,45 @@ def load_all_resources():
 
     def safe_load(path, method, default_value, display_name):
         if not os.path.exists(path):
-            st.sidebar.warning(f"⚠️ FILE '{path}' tidak ditemukan ({display_name}).")
+            st.sidebar.warning(f"⚠️ FILE '{path}' not found ({display_name}).")
             return default_value
         try:
             data = method(path)
-            st.sidebar.success(f"Berhasil memuat {display_name}")
+            st.sidebar.success(f"Successfully loaded {display_name}")
             return data
         except Exception as e:
-            st.sidebar.error(f"Error memuat {display_name}: {e}")
+            st.sidebar.error(f"Error loading {display_name}: {e}")
             return default_value
 
-    st.sidebar.subheader("Status Loading Model & Data")
+    st.sidebar.subheader("Model & Data Loading Status")
 
     # Load Model
-    model_anomali = safe_load('model_isolation_forest.pkl', joblib.load, None, "Model Anomali")
-    model_klasifikasi = safe_load('model_klasifikasi.pkl', joblib.load, None, "Model Klasifikasi")
-    scaler_klasifikasi = safe_load('scaler_klasifikasi.pkl', joblib.load, None, "Scaler Klasifikasi")
-    model_prediksi_waktu = safe_load('model_waktu_prediksi.pkl', joblib.load, None, "Model Prediksi Waktu")
+    model_anomali = safe_load('model_isolation_forest.pkl', joblib.load, None, "Anomaly Model")
+    model_klasifikasi = safe_load('model_klasifikasi.pkl', joblib.load, None, "Classification Model")
+    scaler_klasifikasi = safe_load('scaler_klasifikasi.pkl', joblib.load, None, "Classification Scaler")
+    model_prediksi_waktu = safe_load('model_waktu_prediksi.pkl', joblib.load, None, "Time Prediction Model")
 
     # Load CSV
     df_anomali_loaded = safe_load('hasil_deteksi_anomali.csv',
                                   lambda f: pd.read_csv(f).head(100),
-                                  df_anomali, "Data Anomali")
+                                  df_anomali, "Anomaly Data")
 
     df_klasifikasi_loaded = safe_load('insight_klasifikasi.csv',
-                                      lambda f: pd.read_csv(f).head(100),
-                                      df_klasifikasi, "Data Insight Klasifikasi")
+                                    lambda f: pd.read_csv(f).head(100),
+                                    df_klasifikasi, "Classification Insight Data")
 
     df_importance_loaded = safe_load('feature_importance.csv',
-                                     lambda f: pd.read_csv(f).head(100),
-                                     df_importance, "Feature Importance")
+                                    lambda f: pd.read_csv(f).head(100),
+                                    df_importance, "Feature Importance")
 
     # Load JSON
     kolom_klasifikasi = safe_load('kolom_klasifikasi.json',
                                   lambda f: json.load(open(f)),
-                                  {}, "Metadata Klasifikasi")
+                                  {}, "Classification Metadata")
 
     feature_waktu = safe_load('feature_waktu.json',
                               lambda f: json.load(open(f)),
-                              {}, "Metadata Prediksi Waktu")
+                              {}, "Time Prediction Metadata")
 
     if isinstance(df_anomali_loaded, pd.DataFrame): df_anomali = df_anomali_loaded
     if isinstance(df_klasifikasi_loaded, pd.DataFrame): df_klasifikasi = df_klasifikasi_loaded
@@ -102,18 +104,18 @@ def load_all_resources():
 # ---------------------------------------------------------
 st.set_page_config(page_title="Logistics Health Monitor", layout="wide")
 st.title("🚢 The Logistics Health Monitor: Supply Chain Control Tower")
-st.markdown("Dashboard terintegrasi untuk pengambilan keputusan cepat manajer gudang/logistik.")
+st.markdown("Integrated dashboard for rapid decision-making by warehouse/logistics managers.")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs([
-    "🚨 Early Warning System (Anomali)",
-    "📈 Risk Profiling (Klasifikasi)",
-    "⚙️ Optimization & Strategy (Prediksi Waktu)"
+    "🚨 Early Warning System (Anomaly)",
+    "📈 Risk Profiling (Classification)",
+    "⚙️ Optimization & Strategy (Time Prediction)"
 ])
 
 
 # ---------------------------------------------------------
-# TAB 1 – DETEKSI ANOMALI
+# TAB 1 – ANOMALY DETECTION
 # ---------------------------------------------------------
 with tab1:
 
@@ -124,17 +126,17 @@ with tab1:
         anomalies_count = DF_ANOMALI[DF_ANOMALI['Is_Anomaly'].astype(str).str.lower() == 'yes'].shape[0]
 
     if anomalies_count > 0:
-        st.error(f"⚠️ Terdeteksi {anomalies_count} anomali operasional.")
+        st.error(f"⚠️ Detected {anomalies_count} operational anomalies.")
     else:
-        st.success("Tidak ada anomali terdeteksi.")
+        st.success("No anomalies detected.")
 
-    st.subheader("Visualisasi Sales & Profit")
+    st.subheader("Sales & Profit Visualization")
     try:
         st.line_chart(DF_ANOMALI[['Sales', 'Order_Profit']])
     except:
-        st.warning("Kolom Sales/Order_Profit tidak ditemukan.")
+        st.warning("Column Sales/Order_Profit not found.")
 
-    st.subheader("Detail Anomali")
+    st.subheader("Anomaly Details")
     if 'Is_Anomaly' in DF_ANOMALI.columns:
         df_f = DF_ANOMALI[DF_ANOMALI['Is_Anomaly'].astype(str).str.lower() == 'yes']
         st.dataframe(df_f.head(50))
@@ -143,16 +145,16 @@ with tab1:
 
 
 # ---------------------------------------------------------
-# TAB 2 – KLASIFIKASI & PREDIKSI RISIKO
+# TAB 2 – CLASSIFICATION & RISK PREDICTION
 # ---------------------------------------------------------
 with tab2:
 
-    st.header("🚦 Klasifikasi Risiko Keterlambatan Pesanan")
+    st.header("🚦 Late Order Risk Classification")
 
     # ============================================================
-    # 1️⃣ PROPORSI RISIKO
+    # 1️⃣ RISK PROPORTION
     # ============================================================
-    st.subheader("📊 Proporsi Risiko Keterlambatan")
+    st.subheader("📊 Late Risk Proportion")
 
     try:
         raw = DF_KLASIFIKASI["Proporsi"].iloc[0]
@@ -163,35 +165,35 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.warning(f"Gagal visualisasi Proporsi Risiko. Error: {e}")
+        st.warning(f"Failed to visualize Risk Proportion. Error: {e}")
         
     
     # ============================================================
-    # 2️⃣ KATEGORI PRODUK PALING BERISIKO (TANPA STATUS PREDIKSI)
+    # 2️⃣ HIGHEST RISK PRODUCT CATEGORIES
     # ============================================================
-    st.subheader("🏆 Kategori Produk dengan Risiko Keterlambatan Tertinggi")
+    st.subheader("🏆 Product Categories with Highest Late Risk")
 
     try:
-        # Ambil fitur kategori dari model
+        # Get category features from model
         model_features = list(MODEL_KLASIFIKASI.feature_names_in_)
         kategori_cols = [c for c in model_features if c.startswith("category_name_")]
 
         if len(kategori_cols) == 0:
-            st.warning("❌ Tidak ada fitur kategori dalam model (category_name_*).")
+            st.warning("❌ No category features found in model (category_name_*).")
 
         else:
-            st.info("🔄 Menghitung risiko kategori berdasarkan model...")
+            st.info("🔄 Calculating category risk based on model...")
 
             hasil_kat = []
 
             for col in kategori_cols:
                 kategori_name = col.replace("category_name_", "")
 
-                # --------- SIMULASI jika data asli tidak tersedia ---------
+                # --------- SIMULATION if raw data is unavailable ---------
                 X_dummy = pd.DataFrame([{f: 0 for f in model_features}])
-                X_dummy[col] = 1  # aktifkan kategori yg dihitung
+                X_dummy[col] = 1  # activate the category being calculated
 
-                # Scaling kolom numerik
+                # Scale numeric columns
                 num_cols = [
                     c for c in [
                         "days_for_shipment_scheduled",
@@ -210,25 +212,25 @@ with tab2:
 
                 hasil_kat.append([kategori_name, pred])
 
-            # Buat dataframe
-            df_kat = pd.DataFrame(hasil_kat, columns=["Kategori", "Risk_Ratio"])
+            # Create dataframe
+            df_kat = pd.DataFrame(hasil_kat, columns=["Category", "Risk_Ratio"])
             df_kat["Risk_Percent"] = (df_kat["Risk_Ratio"] * 100).round(2)
 
-            # Urutkan risiko tertinggi
+            # Sort by highest risk
             df_kat_sorted = df_kat.sort_values("Risk_Ratio", ascending=False).reset_index(drop=True)
 
-            # Ambil kategori paling berisiko
+            # Get the most risky category
             top_kat = df_kat_sorted.iloc[0]
 
-            st.success(f"🔥 **Kategori dengan Risiko Tertinggi:** {top_kat['Kategori']} — {top_kat['Risk_Percent']}%")
+            st.success(f"🔥 **Highest Risk Category:** {top_kat['Category']} — {top_kat['Risk_Percent']}%")
 
-            # Tampilkan grafik Top 10
+            # Show Top 10 Chart
             df_top10 = df_kat_sorted.head(10)
             fig_top10 = px.bar(
                 df_top10,
-                x="Kategori",
+                x="Category",
                 y="Risk_Percent",
-                title="🔥 Top 10 Kategori Produk dengan Risiko Keterlambatan Tertinggi",
+                title="🔥 Top 10 Product Categories with Highest Late Risk",
                 text="Risk_Percent",
                 color="Risk_Percent",
                 color_continuous_scale="Reds"
@@ -238,23 +240,23 @@ with tab2:
             st.plotly_chart(fig_top10, use_container_width=True)
 
     except Exception as e:
-        st.warning(f"Gagal menghitung kategori risiko. Error: {e}")
+        st.warning(f"Failed to calculate risk categories. Error: {e}")
 
         
     # ============================================================
-    # 3️⃣ VISUALISASI REGION BERISIKO
+    # 3️⃣ REGIONAL RISK VISUALIZATION
     # ============================================================
-    st.subheader("🌍 Visualisasi Region Paling Berisiko")
+    st.subheader("🌍 Regional Risk Visualization")
 
     try:
         model_features = list(MODEL_KLASIFIKASI.feature_names_in_)
         region_cols = [col for col in model_features if col.startswith("order_region_")]
 
         if len(region_cols) == 0:
-            st.warning("❌ Model tidak memiliki fitur region order_region_*.")        
+            st.warning("❌ Model does not contain region features (order_region_*).")        
 
         else:
-            st.info("🔄 Menghitung ulang risiko tiap region berdasarkan MODEL KLASIFIKASI.")
+            st.info("🔄 Recalculating risk per region based on CLASSIFICATION MODEL.")
 
             hasil = []
 
@@ -306,14 +308,14 @@ with tab2:
                 else:
                     warna.append("green")
 
-            region_risk["Warna"] = warna
+            region_risk["Color"] = warna
 
             fig2 = px.bar(
                 region_risk,
                 x="Region",
                 y="Risk_Percent",
-                color="Warna",
-                title="🔥 Persentase Risiko per Region (Berdasarkan Model)",
+                color="Color",
+                title="🔥 Risk Percentage by Region (Model Based)",
                 text="Risk_Percent"
             )
 
@@ -321,16 +323,16 @@ with tab2:
             st.plotly_chart(fig2, use_container_width=True)
 
             max_r = region_risk.iloc[0]
-            st.success(f"🌋 Region paling berisiko: **{max_r['Region']} ({max_r['Risk_Percent']}%)**")
+            st.success(f"🌋 Most risky region: **{max_r['Region']} ({max_r['Risk_Percent']}%)**")
 
     except Exception as e:
-        st.warning(f"Gagal menampilkan visualisasi region: {e}")
+        st.warning(f"Failed to display region visualization: {e}")
 
         
     # ============================================================
-    # 4️⃣ SIMULASI PESANAN BARU
+    # 4️⃣ NEW ORDER SIMULATION
     # ============================================================
-    st.subheader("🎯 Simulasi Risiko Pesanan Baru")
+    st.subheader("🎯 New Order Risk Simulation")
 
     if META_KLASIFIKASI and MODEL_KLASIFIKASI and SCALER_KLASIFIKASI:
 
@@ -349,14 +351,14 @@ with tab2:
             "West of USA ","Western Europe"
         ])
 
-        category = st.selectbox("Kategori Produk", [
+        category = st.selectbox("Product Category", [
             k.replace("category_name_", "") for k in META_KLASIFIKASI if k.startswith("category_name_")
         ])
 
         segment = st.selectbox("Customer Segment", ["Corporate", "Home Office"])
 
 
-        if st.button("Prediksi Risiko"):
+        if st.button("Predict Risk"):
             try:
                 X_dict = {col: 0 for col in META_KLASIFIKASI}
 
@@ -389,45 +391,45 @@ with tab2:
                 prob = MODEL_KLASIFIKASI.predict_proba(X_df)[0]
 
                 if pred == 1:
-                    st.error(f"💥 Risiko Tinggi (Terlambat) – Prob: {prob[1]:.2f}")
+                    st.error(f"💥 High Risk (Late) – Prob: {prob[1]:.2f}")
                 else:
-                    st.success(f"🟢 Tidak Terlambat – Prob Risiko Tinggi: {prob[1]:.2f}")
+                    st.success(f"🟢 Not Late – High Risk Prob: {prob[1]:.2f}")
 
             except Exception as e:
-                st.error(f"Gagal melakukan prediksi: {e}")
+                st.error(f"Prediction failed: {e}")
 
     else:
-        st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
+        st.warning("⚠️ Classification model / metadata not loaded.")
         
     
     
 # ---------------------------------------------------------
-# TAB 3 – OPTIMIZATION & STRATEGY (VERSION FOR HUMAN-FRIENDLY UI)
+# TAB 3 – OPTIMIZATION & STRATEGY (ENGLISH UI)
 # ---------------------------------------------------------
 with tab3:
 
     st.header("🚀 3. Optimization & Strategy")
 
     # ============================================================
-    # 1️⃣ FEATURE IMPORTANCE – LANGSUNG DARI MODEL
+    # 1️⃣ FEATURE IMPORTANCE – DIRECT FROM MODEL
     # ============================================================
-    st.subheader("📌 Faktor yang Paling Mempengaruhi Waktu Pengiriman")
+    st.subheader("📌 Factors Most Affecting Shipping Time")
 
     st.write("""
-        Grafik ini menunjukkan **10 faktor teratas** yang paling mempengaruhi kecepatan pengiriman 
-        berdasarkan model Machine Learning.  
-        Nilai **Importance** = seberapa besar pengaruh suatu fitur terhadap hasil prediksi.
+        This chart shows the **top 10 factors** that most influence shipping speed 
+        based on the Machine Learning model.  
+        **Importance** value = magnitude of the feature's influence on the prediction result.
     """)
 
     try:
         if MODEL_PREDIKSI is None:
-            st.warning("Model prediksi waktu belum dimuat.")
+            st.warning("Time prediction model not loaded.")
         else:
             fitur_model = MODEL_PREDIKSI.feature_names_in_
             importance_model = MODEL_PREDIKSI.feature_importances_
 
             df_imp = pd.DataFrame({
-                "Fitur": fitur_model,
+                "Feature": fitur_model,
                 "Importance": importance_model
             })
 
@@ -437,53 +439,53 @@ with tab3:
             fig_imp = px.bar(
                 df_imp,
                 x="Importance",
-                y="Fitur",
+                y="Feature",
                 orientation="h",
-                title="🔍 Top 10 Faktor Paling Berpengaruh Terhadap Waktu Pengiriman",
+                title="🔍 Top 10 Factors Influencing Shipping Time",
             )
 
             st.plotly_chart(fig_imp, use_container_width=True)
 
-            st.info("💡 *Semakin ke kanan batangnya, semakin besar pengaruh fitur tersebut terhadap waktu pengiriman.*")
+            st.info("💡 *The further to the right the bar, the greater the feature's influence on shipping time.*")
 
     except Exception as e:
-        st.error(f"Gagal mengambil feature importance dari model. Error: {e}")
+        st.error(f"Failed to retrieve feature importance from model. Error: {e}")
         
     
     # ============================================================
-    #  ACTUAL VS PREDICTED — HANYA VISUALISASI UTAMA
+    #  ACTUAL VS PREDICTED
     # ============================================================
 
-    st.subheader("📈 Realita vs Prediksi Waktu Pengiriman")
+    st.subheader("📈 Reality vs Predicted Shipping Time")
 
     try:
         if MODEL_PREDIKSI is None or META_WAKTU is None:
-            st.warning("Model prediksi atau metadata belum dimuat.")
+            st.warning("Prediction model or metadata not loaded.")
         else:
 
-            # 1. Load X_test dan y_test
+            # 1. Load X_test and y_test
             X_test = pd.read_csv("X_test.csv")
             y_test = pd.read_csv("y_test.csv")
 
-            # --- FIX DIMENSI Y_TEST ---
+            # --- FIX Y_TEST DIMENSIONS ---
             if isinstance(y_test, pd.DataFrame):
                 if y_test.shape[1] == 1:
-                    y_test = y_test.iloc[:, 0]  # ubah ke Series
+                    y_test = y_test.iloc[:, 0]  # convert to Series
                 else:
-                    raise ValueError("y_test punya lebih dari 1 kolom.")
+                    raise ValueError("y_test has more than 1 column.")
 
-            # --- FIX URUTAN FITUR SESUAI MODEL ---
+            # --- FIX FEATURE ORDER MATCHING MODEL ---
             fitur_model = list(META_WAKTU)
             X_test = X_test[fitur_model]
 
-            # pastikan numerik
+            # ensure numeric
             X_test = X_test.apply(pd.to_numeric, errors="coerce").fillna(0)
 
-            # 2. Prediksi
+            # 2. Predict
             pred = MODEL_PREDIKSI.predict(X_test)
             pred = np.array(pred).reshape(-1)
 
-            # 3. Samakan panjang data
+            # 3. Match data length
             n = min(len(y_test), len(pred))
 
             df_plot = pd.DataFrame({
@@ -492,17 +494,17 @@ with tab3:
             })
 
             # ============================================================
-            # 10. GRAFIK UTAMA — ACTUAL VS PREDICTED
+            # 10. MAIN CHART — ACTUAL VS PREDICTED
             # ============================================================
 
-            st.subheader("📈 Akurasi Prediksi (Semakin Dekat Garis Merah Semakin Bagus)")
+            st.subheader("📈 Prediction Accuracy (Closer to Red Line is Better)")
 
             fig = px.scatter(
                 df_plot,
                 x="Actual",
                 y="Predicted",
                 opacity=0.7,
-                title="Actual vs Predicted — Semakin Dekat ke Garis Merah Semakin Akurat"
+                title="Actual vs Predicted — Closer to Red Line means More Accurate"
             )
 
             fig.add_shape(
@@ -517,71 +519,69 @@ with tab3:
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.error(f"Gagal membuat grafik Actual vs Predicted: {e}")
+        st.error(f"Failed to create Actual vs Predicted chart: {e}")
     
     
     # ============================================================
-    # 3️⃣ SIMULATOR WAKTU PENGIRIMAN
+    # 3️⃣ SHIPPING TIME SIMULATOR
     # ============================================================
-    st.subheader("⚙️ Simulator Estimasi Waktu Pengiriman")
+    st.subheader("⚙️ Shipping Time Estimator Simulator")
 
     st.write("""
-        Gunakan simulator ini untuk melihat perkiraan waktu pengiriman antara **Standard**, 
-        **Express**, dan **Same Day** berdasarkan jarak.
+        Use this simulator to see estimated shipping times between **Standard**, 
+        **Express**, and **Same Day** based on distance.
     """)
 
-    mode = st.radio("Pilih Mode Pengiriman:", ["Standard", "Express", "Same Day"])
-    dist = st.number_input("Masukkan jarak (km)", min_value=1, value=500)
+    mode = st.radio("Select Shipping Mode:", ["Standard", "Express", "Same Day"])
+    dist = st.number_input("Enter distance (km)", min_value=1, value=500)
 
-    if st.button("🔮 Hitung Estimasi"):
+    if st.button("🔮 Calculate Estimate"):
 
-        # Simulasi berbasis rumus sederhana
+        # Simple formula based simulation
         if mode == "Standard":
             pred = 6.5 + (dist / 500)
-            delta = "3 hari lebih lambat dari Express"
+            delta = "3 days slower than Express"
         elif mode == "Express":
             pred = 3.5 + (dist / 1000)
-            delta = "0 hari (baseline)"
+            delta = "0 days (baseline)"
         else:  # Same Day
             pred = 1
-            delta = "5 hari lebih cepat dari Standard"
+            delta = "5 days faster than Standard"
 
-        st.metric("Estimasi Waktu Pengiriman", f"{pred:.1f} Hari", delta)
+        st.metric("Estimated Shipping Time", f"{pred:.1f} Days", delta)
 
         st.write("---")
 
-        st.subheader("📈 Perbandingan Waktu Antar Mode Pengiriman")
+        st.subheader("📈 Time Comparison Between Shipping Modes")
 
         st.write("""
-            Grafik berikut menunjukkan **seberapa cepat masing-masing mode** 
-            jika jarak semakin jauh.  
-            • **Semakin tinggi garis → semakin lama waktu pengiriman**  
-            • Mode **Same Day** selalu 1 hari, tidak tergantung jarak  
+            The following chart shows **how fast each mode is** as the distance increases.  
+            • **Higher line → longer shipping time** • **Same Day** mode remains 1 day regardless of distance  
         """)
 
         # ==============================
-        # VISUALISASI PERBANDINGAN MODE
+        # MODE COMPARISON VISUALIZATION
         # ==============================
         jarak_list = list(range(0, 1001, 50))
 
         sim_df = pd.DataFrame({
-            "Jarak": jarak_list,
+            "Distance": jarak_list,
             "Standard": [6.5 + (d/500) for d in jarak_list],
             "Express":  [3.5 + (d/1000) for d in jarak_list],
             "Same Day": [1 for _ in jarak_list]
         })
 
-        sim_df_melt = sim_df.melt(id_vars="Jarak", var_name="Mode", value_name="Waktu")
+        sim_df_melt = sim_df.melt(id_vars="Distance", var_name="Mode", value_name="Time")
 
         fig_sim = px.line(
             sim_df_melt,
-            x="Jarak",
-            y="Waktu",
+            x="Distance",
+            y="Time",
             color="Mode",
             markers=True,
-            title="📈 Perbandingan Waktu Pengiriman Berdasarkan Jarak",
+            title="📈 Shipping Time Comparison by Distance",
         )
 
         st.plotly_chart(fig_sim, use_container_width=True)
 
-        st.info("💡 *Dari grafik, terlihat bahwa Express lebih cepat dari Standard, dan Same Day tetap paling cepat untuk semua jarak.*")
+        st.info("💡 *From the chart, it is visible that Express is faster than Standard, and Same Day remains the fastest for all distances.*")
