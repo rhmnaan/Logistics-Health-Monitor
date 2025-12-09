@@ -172,43 +172,55 @@ with tab2:
     st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        # Ambil semua kolom kategori
-        kategori_cols = [c for c in DF_KLASIFIKASI.columns if c.startswith("category_name_")]
+        # AMBIL KATEGORI DARI METADATA MODEL (bukan dataset)
+        kategori_cols = [k for k in META_KLASIFIKASI if k.startswith("category_name_")]
 
         if not kategori_cols:
-            st.warning("❌ Tidak ditemukan kolom kategori (category_name_*) dalam dataset.")
+            st.warning("❌ Tidak ada kategori dalam META_KLASIFIKASI.")
         else:
-            # Mencari kategori dari kolom One-Hot
-            DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI[kategori_cols].idxmax(axis=1)
-            DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI["Kategori"].str.replace("category_name_", "")
+            # Extract nama kategori saja
+            kategori_list = [k.replace("category_name_", "") for k in kategori_cols]
 
-            # Hitung risiko per kategori berdasarkan prediksi klasifikasi
-            # 1 = terlambat (risiko tinggi)
-            risk_summary = (
-                DF_KLASIFIKASI.groupby("Kategori")["Prediksi"]
-                .sum()
-                .reset_index()
-                .rename(columns={"Prediksi": "Risk_Count"})
-            )
+            hasil = []
+            for kat in kategori_list:
+                col_name = f"category_name_{kat}"
 
-            # Ambil Top 10
-            top10 = risk_summary.sort_values("Risk_Count", ascending=False).head(10)
+                # Buat mask kategori dari metadata (dataset tetap dipakai)
+                if col_name in DF_KLASIFIKASI.columns:
+                    mask = DF_KLASIFIKASI[col_name] == 1
+                else:
+                    # Jika dataset tidak punya OHE kategori,
+                    # kita tidak bisa tahu kategori asli setiap baris
+                    continue
 
-            if top10.empty:
-                st.warning("⚠ Tidak ada data kategori untuk dihitung risikonya.")
+                subset = DF_KLASIFIKASI[mask]
+
+                if len(subset) > 0:
+                    # Hitung jumlah prediksi keterlambatan
+                    risk_count = subset["Prediksi"].sum()
+                    hasil.append([kat, risk_count])
+
+            # Jika hasil kosong
+            if not hasil:
+                st.warning("⚠ Tidak ada data risiko kategori yang dapat dihitung.")
             else:
+                df_risk = pd.DataFrame(hasil, columns=["Kategori", "Risk"])
+
+                # Top 10
+                top10 = df_risk.sort_values("Risk", ascending=False).head(10)
+
                 fig_top = px.bar(
                     top10,
                     x="Kategori",
-                    y="Risk_Count",
-                    text="Risk_Count",
-                    color="Risk_Count",
+                    y="Risk",
+                    text="Risk",
+                    color="Risk",
                     title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
                 )
 
                 fig_top.update_layout(
-                    height=500,
-                    xaxis_tickangle=-45
+                    xaxis_tickangle=-45,
+                    height=500
                 )
 
                 st.plotly_chart(fig_top, use_container_width=True)
@@ -216,10 +228,6 @@ with tab2:
     except Exception as e:
         st.error(f"Gagal membuat visualisasi Top 10: {e}")
 
-    # Debug
-    st.write("🔍 DEBUG — Sample Kategori Terbaca")
-    st.write(DF_KLASIFIKASI[["Kategori"] + kategori_cols].head())
-    
     
     # ============================================================
     # 3️⃣ VISUALISASI REGION BERISIKO
