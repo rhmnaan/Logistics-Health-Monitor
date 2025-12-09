@@ -162,12 +162,65 @@ with tab2:
         fig = px.pie(df_proporsi, names="Risk_Level", values="Count", hole=0.3)
         st.plotly_chart(fig, use_container_width=True)
 
-        st.bar_chart(df_proporsi.set_index("Risk_Level"))
-
     except Exception as e:
         st.warning(f"Gagal visualisasi Proporsi Risiko. Error: {e}")
+        
+        
+    # ============================================================
+    # 3️⃣.b TOP 10 KATEGORI DENGAN RISIKO KETERLAMBATAN TERTINGGI
+    # ============================================================
+    st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
 
+    try:
+        # Ambil semua kolom kategori
+        kategori_cols = [c for c in DF_KLASIFIKASI.columns if c.startswith("category_name_")]
 
+        if not kategori_cols:
+            st.warning("❌ Tidak ditemukan kolom kategori (category_name_*) dalam dataset.")
+        else:
+            # Mencari kategori dari kolom One-Hot
+            DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI[kategori_cols].idxmax(axis=1)
+            DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI["Kategori"].str.replace("category_name_", "")
+
+            # Hitung risiko per kategori berdasarkan prediksi klasifikasi
+            # 1 = terlambat (risiko tinggi)
+            risk_summary = (
+                DF_KLASIFIKASI.groupby("Kategori")["Prediksi"]
+                .sum()
+                .reset_index()
+                .rename(columns={"Prediksi": "Risk_Count"})
+            )
+
+            # Ambil Top 10
+            top10 = risk_summary.sort_values("Risk_Count", ascending=False).head(10)
+
+            if top10.empty:
+                st.warning("⚠ Tidak ada data kategori untuk dihitung risikonya.")
+            else:
+                fig_top = px.bar(
+                    top10,
+                    x="Kategori",
+                    y="Risk_Count",
+                    text="Risk_Count",
+                    color="Risk_Count",
+                    title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
+                )
+
+                fig_top.update_layout(
+                    height=500,
+                    xaxis_tickangle=-45
+                )
+
+                st.plotly_chart(fig_top, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Gagal membuat visualisasi Top 10: {e}")
+
+    # Debug
+    st.write("🔍 DEBUG — Sample Kategori Terbaca")
+    st.write(DF_KLASIFIKASI[["Kategori"] + kategori_cols].head())
+    
+    
     # ============================================================
     # 3️⃣ VISUALISASI REGION BERISIKO
     # ============================================================
@@ -253,8 +306,6 @@ with tab2:
     except Exception as e:
         st.warning(f"Gagal menampilkan visualisasi region: {e}")
 
-
-    
         
     # ============================================================
     # 4️⃣ SIMULASI PESANAN BARU
@@ -328,57 +379,6 @@ with tab2:
     else:
         st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
         
-    
-    # ============================================================
-    # 3️⃣.b TOP 10 KATEGORI DENGAN RISIKO KETERLAMBATAN TERTINGGI
-    # ============================================================
-    st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
-
-    try:
-        if "Top_Kategori" not in DF_KLASIFIKASI.columns:
-            st.warning("❌ Kolom 'Top_Kategori' tidak ditemukan.")
-        else:
-            # Extract kategori & risk dari dict jika ada
-            DF_KLASIFIKASI["Kategori"] = DF_KLASIFIKASI["Top_Kategori"].apply(
-                lambda x: x.get("Category") if isinstance(x, dict) else None
-            )
-            DF_KLASIFIKASI["Risk"] = DF_KLASIFIKASI["Top_Kategori"].apply(
-                lambda x: x.get("Risk_Count") if isinstance(x, dict) else None
-            )
-
-            data = DF_KLASIFIKASI.dropna(subset=["Kategori", "Risk"])
-
-            # Jika kosong, tampilkan pesan
-            if data.empty:
-                st.warning("⚠ Data kategori masih kosong atau formatnya tidak sesuai.")
-            else:
-                # Ambil Top 10
-                top10 = data.sort_values("Risk", ascending=False).head(10)
-
-                # Warna gradien sederhana
-                top10["Warna"] = ["red", "orange", "yellow", "green"] * 3
-                top10["Warna"] = top10["Warna"].head(len(top10))
-
-                fig_top = px.bar(
-                    top10,
-                    x="Kategori",
-                    y="Risk",
-                    color="Warna",
-                    text="Risk",
-                    title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
-                )
-
-                fig_top.update_layout(
-                    xaxis_tickangle=-45,
-                    showlegend=False,
-                    height=500
-                )
-                st.plotly_chart(fig_top, use_container_width=True)
-
-    except Exception as e:
-        st.error(f"Gagal membuat visualisasi Top 10: {e}")
-        
-    st.write(DF_KLASIFIKASI["Top_Kategori"].head())
     
     
 # ---------------------------------------------------------
