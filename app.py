@@ -328,34 +328,47 @@ with tab2:
     else:
         st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
         
+    
     # ============================================================
-    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI — MENGGUNAKAN Top_Kategori
+    # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
     # ============================================================
     st.subheader("🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        col_produk = "Top_Kategori"   # ← pakai kolom ini
+        col_produk = "Top_Kategori"   # gunakan kolom Top_Kategori
+
+        # === Tampilkan kolom dataset & kolom fitur model (debug) ===
+        st.write("🧩 Kolom dalam DF_KLASIFIKASI:", DF_KLASIFIKASI.columns.tolist())
+        st.write("🧠 Fitur yang dipakai model:", MODEL_KLASIFIKASI.feature_names_in_.tolist())
 
         if col_produk not in DF_KLASIFIKASI.columns:
             st.warning(f"❌ Kolom '{col_produk}' tidak ditemukan di dataset.")
-            st.write("Kolom yang tersedia:", DF_KLASIFIKASI.columns.tolist())
-
         else:
             st.info("🔍 Menghitung ulang risiko tiap kategori produk berdasarkan MODEL KLASIFIKASI...")
 
             hasil_produk = []
-            unique_products = DF_KLASIFIKASI[col_produk].dropna().unique()
+            unique_products = DF_KLASIFIKASI[col_produk].unique()
 
             for produk in unique_products:
                 subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col_produk] == produk]
-
-                if subset.empty:
+                if len(subset) == 0:
                     continue
 
-                # Gunakan fitur sesuai model
-                X = subset[MODEL_KLASIFIKASI.feature_names_in_]
+                # ================================
+                # Pilih hanya fitur yang tersedia
+                # ================================
+                fitur_model = [
+                    c for c in MODEL_KLASIFIKASI.feature_names_in_
+                    if c in subset.columns
+                ]
 
-                # Kolom numerik untuk scaling
+                if len(fitur_model) == 0:
+                    st.error(f"⚠ Tidak ada fitur model yang ditemukan untuk kategori: {produk}")
+                    continue
+
+                X = subset[fitur_model]
+
+                # Scaling numerik jika kolomnya ada
                 num_cols = [
                     "days_for_shipment_scheduled",
                     "days_for_shipping_real",
@@ -363,7 +376,7 @@ with tab2:
                 ]
                 num_cols = [c for c in num_cols if c in X.columns]
 
-                if num_cols:
+                if len(num_cols) > 0:
                     try:
                         X.loc[:, num_cols] = SCALER_KLASIFIKASI.transform(X[num_cols])
                     except:
@@ -373,15 +386,15 @@ with tab2:
                 prob = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
                 hasil_produk.append([produk, prob.mean()])
 
-            # DataFrame hasil
+            # Buat dataframe hasil
             produk_risk = pd.DataFrame(hasil_produk, columns=["Produk", "Risk_Ratio"])
             produk_risk["Risk_Percent"] = (produk_risk["Risk_Ratio"] * 100).round(2)
             produk_risk = produk_risk.sort_values("Risk_Ratio", ascending=False)
 
-            # Ambil Top 10
+            # Ambil top 10
             top10 = produk_risk.head(10).reset_index(drop=True)
 
-            # Warna risiko
+            # Tambah warna risiko
             warna = []
             total = len(top10)
             for i in range(total):
@@ -404,20 +417,16 @@ with tab2:
                 title="🔥 Top 10 Produk Dengan Risiko Keterlambatan Tertinggi"
             )
 
-            fig_top.update_layout(
-                xaxis_tickangle=-45,
-                showlegend=False,
-                yaxis_title="Risk (%)"
-            )
-
+            fig_top.update_layout(xaxis_tickangle=-45, showlegend=False)
             st.plotly_chart(fig_top, use_container_width=True)
 
             st.success(
-                f"📦 Kategori dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
+                f"📦 Produk dengan risiko tertinggi: **{top10.iloc[0]['Produk']} ({top10.iloc[0]['Risk_Percent']}%)**"
             )
 
     except Exception as e:
-        st.error(f"Gagal membuat visualisasi Top 10 Produk: {e}")
+        st.warning(f"Gagal membuat visualisasi Top 10 Produk: {e}")
+    
     
 # ---------------------------------------------------------
 # TAB 3 – OPTIMIZATION & STRATEGY (VERSION FOR HUMAN-FRIENDLY UI)
