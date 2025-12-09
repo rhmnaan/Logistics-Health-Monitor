@@ -328,6 +328,16 @@ with tab2:
     else:
         st.warning("⚠️ Model / metadata klasifikasi belum dimuat.")
         
+    # ============================================================
+    # CEK KOLOM DATASET
+    # ============================================================
+    st.subheader("📋 Daftar Kolom pada Dataset Klasifikasi")
+    st.write(DF_KLASIFIKASI.columns.tolist())
+
+    st.subheader("🔍 Preview 5 Baris Dataset")
+    st.dataframe(DF_KLASIFIKASI.head())
+
+        
         
     # ============================================================
     # 3️⃣.b TOP 10 PRODUK RISIKO TERTINGGI
