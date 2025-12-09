@@ -165,70 +165,105 @@ with tab2:
     except Exception as e:
         st.warning(f"Gagal visualisasi Proporsi Risiko. Error: {e}")
         
-        
+    
     # ============================================================
-    # 3️⃣.b TOP 10 KATEGORI DENGAN RISIKO KETERLAMBATAN TERTINGGI
+    # 2️⃣ TOP 10 KATEGORI PRODUK PALING BERISIKO
     # ============================================================
-    st.subheader("🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi")
+    st.subheader("🏆 Top 10 Kategori Produk dengan Risiko Keterlambatan Tertinggi")
 
     try:
-        # AMBIL KATEGORI DARI METADATA MODEL (bukan dataset)
-        kategori_cols = [k for k in META_KLASIFIKASI if k.startswith("category_name_")]
+        # Ambil semua fitur kategori dari model
+        model_features = list(MODEL_KLASIFIKASI.feature_names_in_)
+        kategori_cols = [c for c in model_features if c.startswith("category_name_")]
 
-        if not kategori_cols:
-            st.warning("❌ Tidak ada kategori dalam META_KLASIFIKASI.")
+        if len(kategori_cols) == 0:
+            st.warning("❌ Tidak ada fitur kategori dalam model (category_name_*).")
+
         else:
-            # Extract nama kategori saja
-            kategori_list = [k.replace("category_name_", "") for k in kategori_cols]
+            st.info("🔄 Menghitung ulang risiko per kategori berdasarkan MODEL KLASIFIKASI.")
 
-            hasil = []
-            for kat in kategori_list:
-                col_name = f"category_name_{kat}"
+            hasil_kat = []
 
-                # Buat mask kategori dari metadata (dataset tetap dipakai)
-                if col_name in DF_KLASIFIKASI.columns:
-                    mask = DF_KLASIFIKASI[col_name] == 1
+            # Cek apakah dataset klasifikasi punya kolom kategori one-hot
+            dataset_cols = DF_KLASIFIKASI.columns.tolist()
+            dataset_has_category = any(col in dataset_cols for col in kategori_cols)
+
+            for col in kategori_cols:
+                kategori_name = col.replace("category_name_", "")
+
+                if dataset_has_category and col in DF_KLASIFIKASI.columns:
+                    # Jika dataset punya datanya, hitung berdasarkan subset asli
+                    subset = DF_KLASIFIKASI[DF_KLASIFIKASI[col] == 1]
+
+                    if len(subset) > 0:
+                        X = subset[model_features]
+                        pred = MODEL_KLASIFIKASI.predict_proba(X)[:, 1]
+                        hasil_kat.append([kategori_name, pred.mean()])
+                        continue
+
+                # Jika tidak ada data real di dataset, lakukan simulasi dummy
+                X_dummy = pd.DataFrame([{f: 0 for f in model_features}])
+                X_dummy[col] = 1  # aktifkan kategori
+
+                # Scaling ulang (hanya untuk kolom numerik)
+                num_cols = [
+                    c for c in [
+                        "days_for_shipment_scheduled",
+                        "days_for_shipping_real",
+                        "shipment_delay"
+                    ] if c in model_features
+                ]
+
+                if len(num_cols) > 0:
+                    try:
+                        X_dummy[num_cols] = SCALER_KLASIFIKASI.transform(X_dummy[num_cols])
+                    except:
+                        pass
+
+                pred_sim = MODEL_KLASIFIKASI.predict_proba(X_dummy)[0][1]
+                hasil_kat.append([kategori_name, pred_sim])
+
+            # Convert ke DataFrame
+            df_kat = pd.DataFrame(hasil_kat, columns=["Kategori", "Risk_Ratio"])
+            df_kat["Risk_Percent"] = (df_kat["Risk_Ratio"] * 100).round(2)
+
+            # Ambil TOP 10 kategori berisiko tertinggi
+            df_top10 = df_kat.sort_values("Risk_Ratio", ascending=False).head(10)
+
+            # Buat warna (merah -> kuning -> hijau)
+            total = len(df_top10)
+            warna = []
+            for i in range(total):
+                if i < total * 0.33:
+                    warna.append("red")
+                elif i < total * 0.66:
+                    warna.append("orange")
                 else:
-                    # Jika dataset tidak punya OHE kategori,
-                    # kita tidak bisa tahu kategori asli setiap baris
-                    continue
+                    warna.append("green")
 
-                subset = DF_KLASIFIKASI[mask]
+            df_top10["Warna"] = warna
 
-                if len(subset) > 0:
-                    # Hitung jumlah prediksi keterlambatan
-                    risk_count = subset["Prediksi"].sum()
-                    hasil.append([kat, risk_count])
+            # Plot visualisasi
+            fig_top10 = px.bar(
+                df_top10,
+                x="Kategori",
+                y="Risk_Percent",
+                color="Warna",
+                title="🔥 Top 10 Kategori Produk dengan Risiko Keterlambatan Tertinggi",
+                text="Risk_Percent",
+            )
 
-            # Jika hasil kosong
-            if not hasil:
-                st.warning("⚠ Tidak ada data risiko kategori yang dapat dihitung.")
-            else:
-                df_risk = pd.DataFrame(hasil, columns=["Kategori", "Risk"])
+            fig_top10.update_layout(xaxis_tickangle=-45, showlegend=False)
+            st.plotly_chart(fig_top10, use_container_width=True)
 
-                # Top 10
-                top10 = df_risk.sort_values("Risk", ascending=False).head(10)
-
-                fig_top = px.bar(
-                    top10,
-                    x="Kategori",
-                    y="Risk",
-                    text="Risk",
-                    color="Risk",
-                    title="🔥 Top 10 Kategori Dengan Risiko Keterlambatan Tertinggi"
-                )
-
-                fig_top.update_layout(
-                    xaxis_tickangle=-45,
-                    height=500
-                )
-
-                st.plotly_chart(fig_top, use_container_width=True)
+            # Tampilkan kategori paling berisiko
+            top_cat = df_top10.iloc[0]
+            st.success(f"📌 Kategori dengan risiko tertinggi: **{top_cat['Kategori']} ({top_cat['Risk_Percent']}%)**")
 
     except Exception as e:
-        st.error(f"Gagal membuat visualisasi Top 10: {e}")
+        st.warning(f"Gagal menghitung risiko kategori. Error: {e}")
 
-    
+        
     # ============================================================
     # 3️⃣ VISUALISASI REGION BERISIKO
     # ============================================================
